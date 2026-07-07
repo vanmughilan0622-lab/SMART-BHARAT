@@ -30,9 +30,16 @@ export function ChatInterface() {
     [language]
   )
 
-  const { messages, sendMessage, status, setMessages } = useChat({ transport })
+  const { messages, sendMessage, status, setMessages, error } = useChat({ transport })
+  const [showError, setShowError] = useState(false)
 
   const isLoading = status === "streaming" || status === "submitted"
+
+  useEffect(() => {
+    if (error) {
+      setShowError(true)
+    }
+  }, [error])
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -42,6 +49,7 @@ export function ChatInterface() {
 
   const handleSend = () => {
     if (!inputValue.trim() || isLoading) return
+    setShowError(false)
     sendMessage({ text: inputValue.trim() })
     setInputValue("")
   }
@@ -100,6 +108,19 @@ export function ChatInterface() {
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto py-6 space-y-6 scrollbar-hide z-10">
+        {showError && error && (
+          <div className="p-4 mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm font-semibold flex items-center justify-between shadow-sm backdrop-blur-md">
+            <span className="flex-1">
+              {error.message || "An error occurred with the AI assistant. Please verify that HF_TOKEN or GOOGLE_GENERATIVE_AI_API_KEY is correctly set in your Vercel project environment variables."}
+            </span>
+            <button
+              onClick={() => setShowError(false)}
+              className="text-red-400 hover:text-red-300 ml-4 font-bold text-xs uppercase tracking-wider cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full max-h-full space-y-6">
             <div className="relative">

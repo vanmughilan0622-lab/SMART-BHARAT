@@ -1,12 +1,10 @@
 import { huggingface } from "@ai-sdk/huggingface"
+import { google } from "@ai-sdk/google"
 import { streamText } from "ai"
 import { searchKnowledgeBase } from "@/lib/knowledge-base"
 
 export const maxDuration = 30
 
-if (!process.env.HUGGINGFACE_API_KEY) {
-  process.env.HUGGINGFACE_API_KEY = "hf_your_token_here"
-}
 
 export async function POST(req: Request) {
   const body = await req.json()
@@ -85,9 +83,32 @@ CRITICAL RULES:
 9. For greetings or general conversation, be warm and helpful without needing citations.
 ${ragContext}`
 
+  // Determine AI Provider
+  const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY;
+  const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+  const hasHFKey = hfToken && hfToken !== "hf_your_token_here";
+  const hasGeminiKey = geminiKey && geminiKey !== "paste-your-gemini-api-key-here";
+
+  let model;
+  if (hasHFKey) {
+    process.env.HUGGINGFACE_API_KEY = hfToken;
+    model = huggingface("meta-llama/Meta-Llama-3-8B-Instruct");
+  } else if (hasGeminiKey) {
+    model = google("gemini-1.5-flash");
+  } else {
+    return new Response(
+      JSON.stringify({ 
+        error: "AI provider API key is missing. Please configure HF_TOKEN (or HUGGINGFACE_API_KEY) or GOOGLE_GENERATIVE_AI_API_KEY in your Vercel project settings.",
+        code: "MISSING_API_KEY"
+      }), 
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const result = streamText({
-      model: huggingface("meta-llama/Meta-Llama-3-8B-Instruct"),
+      model,
       system: systemPrompt,
       messages: coreMessages,
     })
