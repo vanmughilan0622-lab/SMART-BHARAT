@@ -112,9 +112,7 @@ export function DashboardSidebar() {
                             {t(language, item.nameKey)}
                           </span>
                         </Link>
-                        {itemIndex < group.items.length - 1 && (
-                          <div className="h-[1px] bg-white/[0.03] mx-6 my-1.5" />
-                        )}
+
                       </div>
                     )
                   })}

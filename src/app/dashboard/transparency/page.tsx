@@ -1,7 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import { useLanguage } from "@/components/providers/LanguageProvider"
-import { Map, BarChart3, TrendingUp, Clock, Activity, MapPin, CheckCircle2 } from "lucide-react"
+import { BarChart3, TrendingUp, Clock, Activity, MapPin, CheckCircle2 } from "lucide-react"
+import dynamic from "next/dynamic"
+
+const BangaloreMap = dynamic(
+  () => import("@/components/transparency/BangaloreMap").then((m) => m.BangaloreMap),
+  { ssr: false, loading: () => <div className="w-full h-full rounded-3xl bg-zinc-950 animate-pulse" /> }
+)
 
 const pageTranslations: Record<string, Record<string, string>> = {
   "English": {
@@ -96,6 +103,7 @@ const pageTranslations: Record<string, Record<string, string>> = {
 export default function TransparencyDashboardPage() {
   const { language } = useLanguage()
   const t = (key: string) => pageTranslations[language]?.[key] || pageTranslations["English"][key] || key
+  const [activeFilter, setActiveFilter] = useState<"pothole" | "water" | "light" | "all">("pothole")
 
   return (
     <div className="w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -150,43 +158,35 @@ export default function TransparencyDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Interactive Map Mockup */}
+        {/* Bangalore Live Map */}
         <div className="lg:col-span-2 space-y-4">
            <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-foreground">{t("heatmap")}</h2>
               <div className="flex gap-2">
-                 <button className="px-3 py-1.5 text-xs font-bold bg-orange-500 text-zinc-950 rounded-lg">{t("potholes")}</button>
-                 <button className="px-3 py-1.5 text-xs font-bold bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground rounded-lg transition-colors">{t("water")}</button>
-                 <button className="px-3 py-1.5 text-xs font-bold bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground rounded-lg transition-colors">{t("lights")}</button>
+                 <button onClick={() => setActiveFilter("pothole")} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeFilter === "pothole" ? "bg-red-500 text-white" : "bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground"}`}>{t("potholes")}</button>
+                 <button onClick={() => setActiveFilter("water")} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeFilter === "water" ? "bg-blue-500 text-white" : "bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground"}`}>{t("water")}</button>
+                 <button onClick={() => setActiveFilter("light")} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeFilter === "light" ? "bg-amber-500 text-white" : "bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground"}`}>{t("lights")}</button>
+                 <button onClick={() => setActiveFilter("all")} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeFilter === "all" ? "bg-orange-500 text-zinc-950" : "bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground"}`}>All</button>
               </div>
            </div>
-           
-           <div className="w-full h-[400px] bg-zinc-950 border border-white/[0.06] rounded-3xl relative overflow-hidden flex items-center justify-center">
-              {/* Fake Map Grid Background */}
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-              
-              <Map className="absolute opacity-5 text-white w-full h-full scale-150" />
-              
-              {/* Heatmap Nodes */}
-              <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500/20 rounded-full blur-2xl"></div>
-              <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,1)] border-2 border-zinc-950"></div>
-              
-              <div className="absolute top-1/2 left-2/3 w-24 h-24 bg-orange-500/20 rounded-full blur-xl"></div>
-              <div className="absolute top-1/2 left-2/3 w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_15px_rgba(255,87,34,1)] border-2 border-zinc-950"></div>
-              
-              <div className="absolute bottom-1/4 left-1/2 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-1/4 left-1/2 flex items-center justify-center gap-1 bg-orange-500/20 border border-orange-500/50 px-3 py-1.5 rounded-full backdrop-blur-md">
-                 <CheckCircle2 className="w-3 h-3 text-orange-500" />
-                 <span className="text-[10px] font-bold text-orange-500">{t("fixed")}</span>
-              </div>
-              
-              {/* Overlay Label */}
-              <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl">
-                 <p className="text-xs font-bold text-foreground flex items-center gap-2"><MapPin className="w-3 h-3 text-orange-500" /> {t("jayanagar")}</p>
-                 <p className="text-[10px] text-muted-foreground mt-0.5">{t("reports")}</p>
+
+           {/* Legend */}
+           <div className="flex gap-4 flex-wrap">
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>{t("potholes")}</span>
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>{t("water")}</span>
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>{t("lights")}</span>
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>{t("fixed")}</span>
+           </div>
+
+           <div className="w-full h-[430px] border border-white/[0.06] rounded-3xl overflow-hidden relative">
+              <BangaloreMap activeFilter={activeFilter} />
+              <div className="absolute bottom-4 left-4 z-[1000] bg-black/70 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl pointer-events-none">
+                 <p className="text-xs font-bold text-white flex items-center gap-2"><MapPin className="w-3 h-3 text-orange-500" /> Bengaluru, Karnataka</p>
+                 <p className="text-[10px] text-zinc-400 mt-0.5">{t("reports")}</p>
               </div>
            </div>
         </div>
+
 
         {/* Recent Local Actions */}
         <div className="lg:col-span-1 space-y-4">

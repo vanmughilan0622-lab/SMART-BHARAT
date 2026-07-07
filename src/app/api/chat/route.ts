@@ -80,7 +80,7 @@ ${ragContext}`
       messages: coreMessages,
     })
 
-    return result.toDataStreamResponse?.() || result.toUIMessageStreamResponse?.() || result.toTextStreamResponse?.()
+    return result.toTextStreamResponse()
   } catch (error: any) {
     console.error("AI SDK Error:", error)
     return new Response(JSON.stringify({ error: error.message || error.toString(), stack: error.stack }), { status: 500, headers: { 'Content-Type': 'application/json' } })
