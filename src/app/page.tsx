@@ -8,8 +8,8 @@ export default function Home() {
       {/* Header */}
       <header className="flex h-20 items-center justify-between border-b border-white/5 px-8">
         <div className="text-2xl font-extrabold tracking-tight text-orange-500">Smart Bharat</div>
-        <Link href="/login">
-          <Button variant="outline" className="text-base font-semibold px-6 py-2">Sign In</Button>
+        <Link href="/dashboard">
+          <Button variant="outline" className="text-base font-semibold px-6 py-2">Go to Dashboard</Button>
         </Link>
       </header>
 
@@ -26,7 +26,7 @@ export default function Home() {
             Navigate government services, discover eligible schemes, and report civic issues — with confidence and privacy.
           </p>
           <div className="flex justify-center gap-4 pt-6">
-            <Link href="/login">
+            <Link href="/dashboard">
               <Button size="lg" className="bg-orange-500 hover:bg-orange-500 text-white gap-2 text-lg font-bold px-8 py-6 rounded-xl shadow-lg shadow-orange-900/30 transition-all duration-200 hover:scale-[1.03]">
                 Get Started <ArrowRight className="h-5 w-5" />
               </Button>
