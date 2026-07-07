@@ -1,6 +1,7 @@
 "use client"
 
 import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import { useState, useRef, useEffect, useMemo } from "react"
 import { Send, Bot, User, Loader2, Trash2, Sparkles, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -24,10 +25,12 @@ export function ChatInterface() {
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, append, status, setMessages } = useChat({ 
-    api: "/api/chat",
-    body: { language }
-  })
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: "/api/chat", body: { language } }),
+    [language]
+  )
+
+  const { messages, sendMessage, status, setMessages } = useChat({ transport })
 
   const isLoading = status === "streaming" || status === "submitted"
 
@@ -39,7 +42,7 @@ export function ChatInterface() {
 
   const handleSend = () => {
     if (!inputValue.trim() || isLoading) return
-    append({ role: "user", content: inputValue.trim() })
+    sendMessage({ text: inputValue.trim() })
     setInputValue("")
   }
 
@@ -116,7 +119,7 @@ export function ChatInterface() {
               {suggestedPromptKeys.map((promptKey) => (
                 <button
                   key={promptKey}
-                  onClick={() => append({ role: "user", content: t(language, promptKey) })}
+                  onClick={() => sendMessage({ text: t(language, promptKey) })}
                   className="text-left p-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.08] hover:border-orange-500/30 transition-all duration-300 text-xs font-semibold text-muted-foreground hover:text-foreground shadow-sm backdrop-blur-sm group"
                 >
                   <span className="transition-transform duration-200 group-hover:translate-x-1 inline-block">{t(language, promptKey)}</span>

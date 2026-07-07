@@ -9,10 +9,23 @@ if (!process.env.HUGGINGFACE_API_KEY) {
 }
 
 export async function POST(req: Request) {
-  const { messages, language = "English" } = await req.json()
-  console.log("RECEIVED LANGUAGE:", language)
+  const body = await req.json()
+  const language = body.language || "English"
+  console.log("RECEIVED BODY:", JSON.stringify(body))
 
-  const coreMessages = (messages || []).map((m: any) => {
+  let messages = body.messages;
+  if (!messages) {
+    if (body.text) {
+      messages = [{ role: "user", content: body.text }]
+    } else if (body.message) {
+      messages = Array.isArray(body.message) ? body.message : [body.message]
+    } else {
+      messages = []
+    }
+  }
+
+  // Map UIMessages (which use 'parts') to CoreMessages (which use 'content')
+  const coreMessages = messages.map((m: any) => {
     let content = m.content || "";
     if (m.parts) {
       content = m.parts
