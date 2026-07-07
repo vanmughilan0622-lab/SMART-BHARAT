@@ -12,8 +12,7 @@ export async function POST(req: Request) {
   const { messages, language = "English" } = await req.json()
   console.log("RECEIVED LANGUAGE:", language)
 
-  // Map UIMessages (which use 'parts') to CoreMessages (which use 'content')
-  const coreMessages = messages.map((m: any) => {
+  const coreMessages = (messages || []).map((m: any) => {
     let content = m.content || "";
     if (m.parts) {
       content = m.parts
