@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth standard models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // App relations
+  profile       Profile?
+  complaints    Complaint[]
+  conversations Conversation[]
+  consents      Consent[]
+  auditLogs     AuditLog[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// App Specific Models
+
+model Profile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  preferredLanguage  String   @default("en")
+  isGuest            Boolean  @default(false)
+  
+  // Basic demographic data (Only collected if consent is given)
+  age                Int?
+  occupation         String?
+  annualIncome       Float?
+  state              String?
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Consent {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  purpose         String   // e.g., "OCR_DOCUMENT_PROCESSING", "DEMOGRAPHIC_SCHEME_MATCHING"
+  granted         Boolean  @default(false)
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  action      String   // e.g., "DATA_DELETION", "CONSENT_REVOKED"
+  details     String?
+  
+  createdAt   DateTime @default(now())
+}
+
+// Data Sourcing Models (No Hallucinations)
+model GovernmentService {
+  id             String   @id @default(cuid())
+  name           String
+  description    String   @db.Text
+  eligibility    String   @db.Text
+  documentsRequired String @db.Text
+  fees           String?
+  timeline       String?
+  
+  // MVP Requirements
+  sourceUrl      String
+  lastVerifiedAt DateTime
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Scheme {
+  id             String   @id @default(cuid())
+  name           String
+  description    String   @db.Text
+  benefits       String   @db.Text
+  eligibilityRules String @db.Text
+  
+  // MVP Requirements
+  sourceUrl      String
+  lastVerifiedAt DateTime
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Civic Issue Tracker
+model Complaint {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String   @db.Text
+  category    String   // e.g., "Pothole", "Streetlight"
+  status      String   @default("SUBMITTED") // SUBMITTED, VERIFIED, ASSIGNED, IN_PROGRESS, RESOLVED
+  
+  latitude    Float
+  longitude   Float
+  imageUrl    String?
+  
+  updates     ComplaintUpdate[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ComplaintUpdate {
+  id          String   @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  
+  status      String
+  message     String   @db.Text
+  
+  createdAt   DateTime @default(now())
+}
+
+// AI Chat Models
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title     String
+  messages  Message[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  role           String       // "user" or "assistant"
+  content        String       @db.Text
+  
+  // Optional citations for RAG tracking
+  citations      String?      @db.Text 
+  
+  createdAt      DateTime     @default(now())
+}
